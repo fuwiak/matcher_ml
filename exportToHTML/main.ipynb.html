@@ -1,0 +1,87 @@
+<html>
+<head>
+<title>main.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #808080; font-style: italic;}
+.s1 { color: #000080; font-weight: bold;}
+.s2 { color: #000000;}
+.s3 { color: #008000; font-weight: bold;}
+.s4 { color: #0000ff;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+main.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% 
+</span><span class="s1">import </span>pandas <span class="s1">as </span>pd
+<span class="s1">import </span>spacy
+<span class="s1">from </span>sklearn.feature_extraction.text <span class="s1">import </span>TfidfVectorizer
+<span class="s1">from </span>sklearn.metrics.pairwise <span class="s1">import </span>cosine_similarity
+
+<span class="s0">#%% 
+</span>!python -m spacy download ru_core_news_sm
+<span class="s0">#%% 
+</span>path_dict = {
+    <span class="s3">'train'</span>: <span class="s3">'data/Соответствия.xlsx'</span>,
+    <span class="s3">'etalon'</span>: <span class="s3">'data/Эталонная номенклатура.xlsx'</span>,
+}
+
+<span class="s0">#%% 
+</span>train = pd.read_excel(path_dict[<span class="s3">'train'</span>])
+
+<span class="s0">#%% 
+</span>etalon = pd.read_excel(path_dict[<span class="s3">'etalon'</span>])
+
+<span class="s0">#%% 
+</span>N = <span class="s4">1000</span>
+train = train.iloc[:N]
+etalon = etalon.iloc[:N]
+
+<span class="s0">#%% 
+</span>etalon
+<span class="s0">#%% 
+# !pip install name_matching</span>
+
+<span class="s0">#%% 
+</span><span class="s1">import </span>pandas <span class="s1">as </span>pd
+<span class="s1">from </span>name_matching.name_matcher <span class="s1">import </span>NameMatcher
+
+etalon_column_name = <span class="s3">'Номенклатура'</span>
+
+
+
+<span class="s0"># initialise the name matcher</span>
+matcher = NameMatcher(number_of_matches=<span class="s4">1</span>,
+                      legal_suffixes=<span class="s1">True</span>,
+                      common_words=<span class="s1">False</span>,
+                      top_n=<span class="s4">50</span>,
+                      verbose=<span class="s1">True</span>)
+
+<span class="s0"># adjust the distance metrics to use</span>
+matcher.set_distance_metrics([<span class="s3">'bag'</span>, <span class="s3">'typo'</span>, <span class="s3">'refined_soundex'</span>])
+
+<span class="s0"># load the data to which the names should be matched</span>
+matcher.load_and_process_master_data(column=etalon_column_name,
+                                     df_matching_data=etalon,
+                                     transform=<span class="s1">True</span>)
+
+<span class="s0"># perform the name matching on the data you want matched</span>
+matches = matcher.match_names(to_be_matched=train,
+                              column_matching=<span class="s3">'Описание'</span>)
+
+
+<span class="s0">#%% 
+</span>combined = pd.merge(train, matches, how=<span class="s3">'left'</span>, left_index=<span class="s1">True</span>, right_on=<span class="s3">'match_index'</span>)
+selected_columns = [<span class="s3">'Описание'</span>, <span class="s3">'Эталонная номенклатура'</span>, <span class="s3">'score'</span>]
+combined = combined[selected_columns]
+
+
+<span class="s0">#%% 
+</span>combined.sort_values(by=<span class="s3">'score'</span>, ascending=<span class="s1">False</span>).head(<span class="s4">1000</span>)
+</pre>
+</body>
+</html>
