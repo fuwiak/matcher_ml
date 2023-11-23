@@ -1,6 +1,8 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 import pandas as pd
 from name_matching.name_matcher import NameMatcher
+
+matching_table = pd.DataFrame()
 def match_with_etalon(file: UploadFile):
     # Read the CSV file into a DataFrame
     train = pd.read_csv(file.file)
@@ -33,24 +35,57 @@ def match_with_etalon(file: UploadFile):
 
     data_json = combined.to_json(orient='records')
 
+    matching_table = combined
+    #add id column
+    matching_table.insert(0, 'id', range(1, 1 + len(matching_table)))
 
     return {"message": "Data matched with etalons", "data": data_json}
 def get_matching_table():
-    # Placeholder logic to retrieve the matching table
-    # Replace with actual retrieval logic
-    return {"message": "Matching table retrieved", "table": []}  # Empty table as placeholder
+    # Convert the matching table DataFrame to JSON
+    table_json = matching_table.to_json(orient='records')
+    return {"message": "Matching table retrieved", "table": table_json}
 
-def update_matching_table(updates):
-    # Placeholder logic for updating the matching table
-    # Replace with actual update logic
-    return {"message": "Matching table updated", "updates": updates}
+def update_matching_table(file: UploadFile):
+    # Read the CSV file containing updates into a DataFrame
+    updates_df = pd.read_csv(file.file)
+    global matching_table
+    matching_table = pd.concat([matching_table, updates_df])
+    return {"message": "Matching table updated", "table": matching_table.to_json(orient='records')}
 
-def add_new_etalon(etalon):
-    # Placeholder logic for adding a new etalon nomenclature
-    # Replace with actual adding logic
-    return {"message": "New etalon added", "etalon": etalon}
 
-def add_new_match(match_data):
-    # Placeholder logic for adding new matches to etalons
-    # Replace with actual matching logic
-    return {"message": "New match added to etalon", "match_data": match_data}
+
+# Assuming 'etalon_df' is a global variable for the etalon DataFrame
+etalon_df = pd.DataFrame()
+
+def add_new_etalon(file: UploadFile):
+    # Read the CSV file containing the new etalon into a DataFrame
+    new_etalon_df = pd.read_csv(file.file)
+    global etalon_df
+    etalon_df = pd.concat([etalon_df, new_etalon_df], ignore_index=True)
+    updated_etalon_json = etalon_df.to_json(orient='records')
+    return {"message": "New etalon added", "etalon": updated_etalon_json}
+
+# Assuming 'matches_df' is a global variable for the matches DataFrame
+matches_df = pd.DataFrame()
+
+def add_new_match(file: UploadFile):
+    # Read the CSV file containing new match data into a DataFrame
+    new_match_data = pd.read_csv(file.file)
+    global matches_df
+    matches_df = pd.concat([matches_df, new_match_data], ignore_index=True)
+    updated_matches_json = matches_df.to_json(orient='records')
+    return {"message": "New match added to etalon", "match_data": updated_matches_json}
+
+
+def change_specific_etalon(etalon_id: int, new_values: dict):
+    # Assuming 'etalon_df' is a global variable for the etalon DataFrame
+    global matching_table
+    matching_table.loc[matching_table['id'] == etalon_id, new_values.keys()] = new_values.values()
+    return {"message": "Specific etalon updated", "etalon": matching_table.loc[matching_table['id'] == etalon_id].to_json(orient='records')}
+
+
+def change_specific_match(match_id: int, new_values: dict):
+    global matching_table
+    matching_table.loc[matching_table['id'] == match_id, new_values.keys()] = new_values.values()
+    return {"message": "Specific match updated", "match": matching_table.loc[matching_table['id'] == match_id].to_json(orient='records')}
+

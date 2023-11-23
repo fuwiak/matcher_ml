@@ -1,3 +1,13 @@
+POST http://localhost:8000/match_with_etalon/
+Content-Type: multipart/form-data; boundary=WebAppBoundary
+
+--WebAppBoundary
+Content-Disposition: form-data; name="file"; filename="train1000.csv"
+
+< train1000.csv
+
+###
+
 POST http://localhost:80/api/item
 Content-Type: application/json
 
@@ -11,7 +21,7 @@ Accept: application/json
 POST http://127.0.0.1:8000/match_with_etalon
 ###
 
-POST http://localhost:8000/match_with_etalon/
+PUT http://localhost:8000/update_matching_table/
 Content-Type: multipart/form-data; boundary=WebAppBoundary
 
 --WebAppBoundary
@@ -20,6 +30,9 @@ Content-Disposition: form-data; name="file"; filename="train1000.csv"
 < train1000.csv
 
 
+
+
+pip freeze > requirements.txt
 
 
 
